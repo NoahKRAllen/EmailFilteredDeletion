@@ -29,7 +29,7 @@ for sender in EXCLUDED_SENDERS:
 not_from_excluded = [uid for uid in message_numbers_list if uid not in excluded_messages]
 non_excluded_senders = []
 #TODO: delete all emails not in the excluded list
-if(not_from_excluded):
+if not_from_excluded:
     for uid in not_from_excluded:
         _, data = imap_server.fetch(uid, "(RFC822)")  # Fetch email content
         email_content = data[0][1]  # Get the raw email content
