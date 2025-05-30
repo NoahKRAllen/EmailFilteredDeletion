@@ -1,8 +1,10 @@
 ﻿import imaplib
 import email
+import re
 from email.header import decode_header
 import json
 import os
+
 
 SAFE_LIST_FILE = "safe_list.json"
 
@@ -75,3 +77,45 @@ def fetch_unapproved_senders(email_user, email_pass, safe_list, scan_limit='500'
         print("Error: ", e)
 
     return list(unapproved_senders)
+
+def delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit='500'):
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+    mail.login(email_user, email_pass)
+    mail.select("inbox")
+
+    result, data = mail.search(None, "ALL")
+    if result != "OK":
+        return 0
+
+    email_ids = data[0].split()
+    email_ids = [e.decode() for e in email_ids]
+    deleted_count = 0
+    if scan_limit != 'all':
+        try:
+            limit = int(scan_limit)
+            email_ids = email_ids[-limit:]
+        except ValueError:
+            pass  # Use full list if conversion fails
+
+    for i, num in enumerate(email_ids):
+        if i % 100 == 0:
+            print(f"Deleting {i} emails...")
+        result, msg_data = mail.fetch(num, '(BODY.PEEK[HEADER.FIELDS (FROM)])')
+        if result != "OK" or not msg_data:
+            continue
+
+        for response_part in msg_data:
+            if isinstance(response_part, tuple):
+                raw = response_part[1].decode(errors='ignore')
+                match = re.search(r"<(.*)>", raw)
+                if match:
+                    sender = match.group(1).strip()
+                    if not any(safe.lower() in sender.lower() for safe in safe_list):
+                        mail.store(num, '+FLAGS', '\\Deleted')
+                        deleted_count += 1
+                        if deleted_count % 100 == 0:
+                            print(f"Marked {deleted_count} emails for deletion...")
+
+    #mail.expunge()
+    mail.logout()
+    return deleted_count

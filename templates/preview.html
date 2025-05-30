@@ -14,7 +14,9 @@
     <br>
     <input type="submit" value="Update Safe List and Refresh">
   </form>
-
+  <form action="/delete" method="post">
+    <input type="submit" value="Delete All Unapproved Emails" onclick="return confirm('Are you sure?')">
+  </form>
   <h3>Current Safe List</h3>
   <ul>
     {% for safe in safe_list %}
