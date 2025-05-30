@@ -32,7 +32,7 @@ def index():
 def preview():
     # Load values
     stored_safe = load_safe_list()
-    unapproved_senders = session.get('unapproved_senders', [])
+    unapproved_senders = session.get('unapproved', [])
     email_user = session.get('email_user')
     email_pass = session.get('email_pass')
     scan_limit = session.get('scan_limit', '500')
@@ -48,6 +48,7 @@ def preview():
         unapproved_senders = fetch_unapproved_senders(
             email_user, email_pass, stored_safe, scan_limit
         )
+
         session['unapproved_senders'] = unapproved_senders
 
     return render_template(
@@ -59,11 +60,11 @@ def preview():
         scan_limit=scan_limit
     )
 
-@app.route('/delete', methods=['POST'])
+@app.route('/delete_emails', methods=['POST'])
 def delete_emails():
-    email_user = request.form.get('email_user')
-    email_pass = request.form.get('email_pass')
-    scan_limit = request.form.get('scan_limit', '500')
+    email_user = session.get('email')
+    email_pass = session.get('password')
+    scan_limit = session.get('scan_limit', '100')
 
     safe_list = load_safe_list()  # Pull fresh from file
 

@@ -98,8 +98,6 @@ def delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit='500'
             pass  # Use full list if conversion fails
 
     for i, num in enumerate(email_ids):
-        if i % 100 == 0:
-            print(f"Deleting {i} emails...")
         result, msg_data = mail.fetch(num, '(BODY.PEEK[HEADER.FIELDS (FROM)])')
         if result != "OK" or not msg_data:
             continue
@@ -111,6 +109,7 @@ def delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit='500'
                 if match:
                     sender = match.group(1).strip()
                     if not any(safe.lower() in sender.lower() for safe in safe_list):
+                        mail.copy(num, '[Gmail]/Trash')  # For Gmail
                         mail.store(num, '+FLAGS', '\\Deleted')
                         deleted_count += 1
                         if deleted_count % 100 == 0:
