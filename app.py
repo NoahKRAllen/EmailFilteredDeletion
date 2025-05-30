@@ -30,35 +30,49 @@ def index():
 
 @app.route('/preview', methods=['GET', 'POST'])
 def preview():
+    # Load values
+    stored_safe = load_safe_list()
+    unapproved_senders = session.get('unapproved_senders', [])
+    email_user = session.get('email_user')
+    email_pass = session.get('email_pass')
+    scan_limit = session.get('scan_limit', '500')
+
+    # Handle new safe-list additions from the preview page
     if request.method == 'POST':
-        # Optional: expand safe list from preview
         updated_safe_list = request.form.getlist('keep')
-        session['safe_list'].extend(updated_safe_list)
-        session['safe_list'] = list(set(session['safe_list'])) #Removes any duplicates
+        stored_safe.extend(updated_safe_list)
+        stored_safe = list(set(stored_safe))  # Remove duplicates
+        save_safe_list(stored_safe)
 
-        save_safe_list(session['safe_list'])
-
-        # Refresh preview
-        unapproved = fetch_unapproved_senders(
-            session['email'], session['password'], session['safe_list']
+        # Refresh unapproved_senders after safe list changes
+        unapproved_senders = fetch_unapproved_senders(
+            email_user, email_pass, stored_safe, scan_limit
         )
-        session['unapproved'] = unapproved
+        session['unapproved_senders'] = unapproved_senders
+
     return render_template(
-        'preview.html',
-        unapproved=session.get('unapproved', []),
-        safe_list=session.get('safe_list', []),
+        "preview.html",
+        unapproved=unapproved_senders,
+        safe_list=stored_safe,
+        email_user=email_user,
+        email_pass=email_pass,
+        scan_limit=scan_limit
     )
 
 @app.route('/delete', methods=['POST'])
 def delete_emails():
-    email_user = session.get('email_user')
-    email_pass = session.get('email_pass')
-    safe_list = session.get('safe_list', [])
+    email_user = request.form.get('email_user')
+    email_pass = request.form.get('email_pass')
+    scan_limit = request.form.get('scan_limit', '500')
+
+    safe_list = load_safe_list()  # Pull fresh from file
 
     if not email_user or not email_pass:
         return "Session expired. Please re-enter your email credentials.", 400
 
-    deleted_count = delete_unapproved_emails(email_user, email_pass, safe_list)
+    deleted_count = delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit)
+
+    session.clear()
 
     return (f"<h1>Deleted {deleted_count} emails not from the safe list addresses</h1><br>"
             f"<a href='/'>Return home</a>")

@@ -15,7 +15,10 @@
     <input type="submit" value="Update Safe List and Refresh">
   </form>
   <form action="/delete" method="post">
-    <input type="submit" value="Delete All Unapproved Emails" onclick="return confirm('Are you sure?')">
+    <input type="hidden" name="email_user" value="{{ email_user }}">
+    <input type="hidden" name="email_pass" value="{{ email_pass }}">
+    <input type="hidden" name="scan_limit" value="{{ scan_limit }}">
+    <input type="submit" value="Delete All Unapproved Emails" onclick="return confirm('Are you sure? This will permanently delete all unapproved emails!');">
   </form>
   <h3>Current Safe List</h3>
   <ul>
@@ -23,5 +26,6 @@
       <li>{{ safe }}</li>
     {% endfor %}
   </ul>
+
 </body>
 </html>
