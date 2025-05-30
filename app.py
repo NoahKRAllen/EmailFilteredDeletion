@@ -18,7 +18,7 @@ def index():
             session['email'], session['password'], session['safe_list']
         )
         session['unapproved'] = unapproved
-        return redirect('preview.html')
+        return redirect(url_for('preview'))
     return render_template('index.html')
 
 @app.route('/preview', methods=['GET', 'POST'])

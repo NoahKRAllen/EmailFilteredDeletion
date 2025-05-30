@@ -2,9 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Unapproved Senders Preview</title>
 </head>
 <body>
+  <h1>Review Unapproved Senders</h1>
+  <form method="post">
+    <p>Check any email addresses you want to keep (they'll be added to your safe list for the future):</p>
+    {% for sender in unapproved %}
+      <input type="checkbox" name="keep" value="{{ sender }}"> {{ sender }} <br>
+    {% endfor %}
+    <br>
+    <input type="submit" value="Update Safe List and Refresh">
+  </form>
 
+  <h3>Current Safe List</h3>
+  <ul>
+    {% for safe in safe_list %}
+      <li>{{ safe }}</li>
+    {% endfor %}
+  </ul>
 </body>
 </html>
