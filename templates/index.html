@@ -13,6 +13,14 @@
         <label>Password (App Password recommended):</label>
         <input type="password" name="password" required><br><br>
 
+        <label for="scan_limit">How many emails to scan:</label>
+        <select name="scan_limit" id="scan_limit">
+            <option value="100">100</option>
+            <option value="500" selected>500</option>
+            <option value="1000">1000</option>
+            <option value="all">All</option>
+        </select>
+        <br>
         <label>Safe List (one email per line):</label>
         <textarea name="safe_list" rows="10" cols="40"></textarea><br><br>
 
