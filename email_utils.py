@@ -7,10 +7,20 @@ import os
 SAFE_LIST_FILE = "safe_list.json"
 
 def load_safe_list():
-    if os.path.exists(SAFE_LIST_FILE):
+    if not os.path.exists(SAFE_LIST_FILE):
+        with open(SAFE_LIST_FILE, "w") as f:
+            json.dump([], f)
+        return []
+
+    try:
         with open(SAFE_LIST_FILE, "r") as f:
-            return json.load(f)
-    return []
+            data = f.read().strip()
+            if not data:
+                return []
+            return json.loads(data)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"Warning Failed to load safe list: {e}")
+        return []
 
 def save_safe_list(safe_list):
     with open(SAFE_LIST_FILE, "w") as f:
