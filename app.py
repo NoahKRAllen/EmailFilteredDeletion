@@ -78,5 +78,23 @@ def delete_emails():
     return (f"<h1>Deleted {deleted_count} emails not from the safe list addresses</h1><br>"
             f"<a href='/'>Return home</a>")
 
+@app.route('/delete_emails_dry_run', methods=['POST'])
+def delete_emails_dry_run():
+    email_user = session.get('email')
+    email_pass = session.get('password')
+    scan_limit = session.get('scan_limit', '100')
+
+    safe_list = load_safe_list()  # Pull fresh from file
+
+    if not email_user or not email_pass:
+        return "Session expired. Please re-enter your email credentials.", 400
+
+    deleted_count = delete_emails_dry_run(email_user, email_pass, safe_list, scan_limit)
+
+    session.clear()
+
+    return (f"<h1>Deleted {deleted_count} emails not from the safe list addresses</h1><br>"
+            f"<a href='/'>Return home</a>")
+
 if __name__ == '__main__':
     app.run(debug=True)
