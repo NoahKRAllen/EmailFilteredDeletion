@@ -4,7 +4,7 @@ import re
 from email.header import decode_header
 import json
 import os
-
+import time
 
 SAFE_LIST_FILE = "safe_list.json"
 
@@ -266,6 +266,8 @@ def delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit='500'
                                 print(f"DEBUG: Successfully moved email {deleted_count}")
                             except Exception as move_error:
                                 print(f"DEBUG: Error moving email {num}: {move_error}")
+                            if deleted_count % 50 == 0:
+                                mail.expunge()
                         else:
                             print(f"DEBUG: Email from {sender} is safe, skipping")
                         break
@@ -302,13 +304,16 @@ def delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit='500'
                     print(f"DEBUG: Fallback method failed: {fallback_error}")
 
             if not sender_found:
+                failed_fetch_count += 1
                 print(f"DEBUG: Still no sender found for email {num} - email may be corrupted or deleted")
-
+            if failed_fetch_count >= 10:
+                break
         except Exception as e:
             print(f"DEBUG: Exception processing email {num}: {e}")
             import traceback
             traceback.print_exc()
             continue
+    time.sleep(0.5)
 
     print(f"DEBUG: Final stats:")
     print(f"  - Processed: {processed_count}")

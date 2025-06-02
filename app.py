@@ -18,11 +18,9 @@ def index():
 
         save_safe_list(merged_safe)
 
-        scan_limit = request.form.get('scan_limit', '500')
-
         # Get unapproved senders
         unapproved = fetch_unapproved_senders(
-            session['email'], session['password'], session['safe_list'], scan_limit
+            session['email'], session['password'], session['safe_list'], '500'
         )
         session['unapproved'] = unapproved
         return redirect(url_for('preview'))
@@ -73,7 +71,7 @@ def preview():
 def delete_emails():
     email_user = session.get('email')
     email_pass = session.get('password')
-    scan_limit = session.get('scan_limit', '100')
+    scan_limit = session.get('scan_limit', '500')
 
     safe_list = load_safe_list()  # Pull fresh from file
 
@@ -91,7 +89,7 @@ def delete_emails():
 def delete_emails_dry_run():
     email_user = session.get('email')
     email_pass = session.get('password')
-    scan_limit = session.get('scan_limit', '100')
+    scan_limit = session.get('scan_limit', '500')
 
     safe_list = load_safe_list()  # Pull fresh from file
 
