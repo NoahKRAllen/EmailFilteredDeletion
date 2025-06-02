@@ -79,7 +79,84 @@ def fetch_unapproved_senders(email_user, email_pass, safe_list, scan_limit='100'
     print(f"Total unapproved senders: {len(unapproved_senders)}")
     return list(unapproved_senders)
 
-def delete_unapproved_emails_debug(email_user, email_pass, safe_list, scan_limit='500'):
+
+def delete_unapproved_emails_dry_run(email_user, email_pass, safe_list, scan_limit='500'):
+    mail = imaplib.IMAP4_SSL("imap.gmail.com")
+    mail.login(email_user, email_pass)
+    mail.select("inbox")
+
+    result, data = mail.search(None, "ALL")
+    if result != "OK":
+        mail.logout()
+        return 0
+
+    email_ids = data[0].split()
+    email_ids = [e.decode() for e in email_ids]
+
+    if scan_limit != 'all':
+        try:
+            limit = int(scan_limit)
+            email_ids = email_ids[-limit:]
+        except ValueError:
+            pass
+
+    print(f"DRY RUN: Would process {len(email_ids)} emails")
+
+    would_delete_count = 0
+    processed_count = 0
+
+    for i, num in enumerate(email_ids):
+        processed_count += 1
+        print(f"DRY RUN: Processing {processed_count}/{len(email_ids)} - Email ID: {num}")
+
+        try:
+            result, msg_data = mail.fetch(num, '(BODY.PEEK[HEADER.FIELDS (FROM)])')
+
+            if result != "OK" or not msg_data:
+                print(f"DRY RUN: Would skip email {num} - fetch failed")
+                continue
+
+            sender = None
+            for response_part in msg_data:
+                if response_part is None:
+                    continue
+
+                if isinstance(response_part, tuple) and len(response_part) > 1 and response_part[1]:
+                    raw = response_part[1].decode(errors='ignore')
+
+                    # Extract sender
+                    match = re.search(r"<([^>]+)>", raw)
+                    if match:
+                        sender = match.group(1).strip()
+                    else:
+                        match = re.search(r"From:\s*([^\r\n]+)", raw, re.IGNORECASE)
+                        if match:
+                            from_line = match.group(1).strip()
+                            email_match = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", from_line)
+                            if email_match:
+                                sender = email_match.group(1)
+                    break
+
+            if sender:
+                is_safe = any(safe.lower() in sender.lower() for safe in safe_list)
+
+                if not is_safe:
+                    would_delete_count += 1
+                    print(f"DRY RUN: WOULD DELETE email from {sender} (#{would_delete_count})")
+                else:
+                    print(f"DRY RUN: Would keep safe email from {sender}")
+            else:
+                print(f"DRY RUN: No sender found for email {num}")
+
+        except Exception as e:
+            print(f"DRY RUN: Error processing email {num}: {e}")
+            continue
+
+    print(f"DRY RUN SUMMARY: Would delete {would_delete_count} out of {processed_count} emails")
+    mail.logout()
+    return would_delete_count
+
+def delete_unapproved_emails(email_user, email_pass, safe_list, scan_limit='500'):
     mail = imaplib.IMAP4_SSL("imap.gmail.com")
     mail.login(email_user, email_pass)
     mail.select("inbox")
@@ -247,80 +324,3 @@ def delete_unapproved_emails_debug(email_user, email_pass, safe_list, scan_limit
 
     mail.logout()
     return deleted_count
-
-
-def delete_unapproved_emails_dry_run(email_user, email_pass, safe_list, scan_limit='500'):
-    mail = imaplib.IMAP4_SSL("imap.gmail.com")
-    mail.login(email_user, email_pass)
-    mail.select("inbox")
-
-    result, data = mail.search(None, "ALL")
-    if result != "OK":
-        mail.logout()
-        return 0
-
-    email_ids = data[0].split()
-    email_ids = [e.decode() for e in email_ids]
-
-    if scan_limit != 'all':
-        try:
-            limit = int(scan_limit)
-            email_ids = email_ids[-limit:]
-        except ValueError:
-            pass
-
-    print(f"DRY RUN: Would process {len(email_ids)} emails")
-
-    would_delete_count = 0
-    processed_count = 0
-
-    for i, num in enumerate(email_ids):
-        processed_count += 1
-        print(f"DRY RUN: Processing {processed_count}/{len(email_ids)} - Email ID: {num}")
-
-        try:
-            result, msg_data = mail.fetch(num, '(BODY.PEEK[HEADER.FIELDS (FROM)])')
-
-            if result != "OK" or not msg_data:
-                print(f"DRY RUN: Would skip email {num} - fetch failed")
-                continue
-
-            sender = None
-            for response_part in msg_data:
-                if response_part is None:
-                    continue
-
-                if isinstance(response_part, tuple) and len(response_part) > 1 and response_part[1]:
-                    raw = response_part[1].decode(errors='ignore')
-
-                    # Extract sender
-                    match = re.search(r"<([^>]+)>", raw)
-                    if match:
-                        sender = match.group(1).strip()
-                    else:
-                        match = re.search(r"From:\s*([^\r\n]+)", raw, re.IGNORECASE)
-                        if match:
-                            from_line = match.group(1).strip()
-                            email_match = re.search(r"([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})", from_line)
-                            if email_match:
-                                sender = email_match.group(1)
-                    break
-
-            if sender:
-                is_safe = any(safe.lower() in sender.lower() for safe in safe_list)
-
-                if not is_safe:
-                    would_delete_count += 1
-                    print(f"DRY RUN: WOULD DELETE email from {sender} (#{would_delete_count})")
-                else:
-                    print(f"DRY RUN: Would keep safe email from {sender}")
-            else:
-                print(f"DRY RUN: No sender found for email {num}")
-
-        except Exception as e:
-            print(f"DRY RUN: Error processing email {num}: {e}")
-            continue
-
-    print(f"DRY RUN SUMMARY: Would delete {would_delete_count} out of {processed_count} emails")
-    mail.logout()
-    return would_delete_count

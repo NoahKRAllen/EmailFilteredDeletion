@@ -1,5 +1,5 @@
 ﻿from flask import Flask, render_template, request, redirect, url_for, session
-from email_utils import fetch_unapproved_senders, load_safe_list, save_safe_list, delete_unapproved_emails
+from email_utils import fetch_unapproved_senders, load_safe_list, save_safe_list, delete_unapproved_emails, delete_unapproved_emails_dry_run
 import os
 
 app = Flask(__name__)
@@ -39,17 +39,26 @@ def preview():
 
     # Handle new safe-list additions from the preview page
     if request.method == 'POST':
-        updated_safe_list = request.form.getlist('keep')
-        stored_safe.extend(updated_safe_list)
-        stored_safe = list(set(stored_safe))  # Remove duplicates
-        save_safe_list(stored_safe)
+        newly_added_safe = request.form.getlist('keep')
 
-        # Refresh unapproved_senders after safe list changes
-        unapproved_senders = fetch_unapproved_senders(
-            email_user, email_pass, stored_safe, scan_limit
-        )
+        if(newly_added_safe):
+            #Add to json stored safe list
+            stored_safe.extend(newly_added_safe)
+            stored_safe = list(set(stored_safe))  # Remove duplicates
+            save_safe_list(stored_safe)
 
-        session['unapproved_senders'] = unapproved_senders
+            #Filter out newly safe senders from unapproved list
+            original_count = len(unapproved_senders)
+
+            unapproved_senders = [
+                sender for sender in unapproved_senders
+                if not any(safe.lower() in sender.lower() for safe in newly_added_safe)
+            ]
+
+            session['unapproved'] = unapproved_senders
+
+            print(f"Filtered unapproved list: {original_count} -> {len(unapproved_senders)} senders")
+            print(f"Newly added safe senders: {newly_added_safe}")
 
     return render_template(
         "preview.html",
@@ -89,7 +98,7 @@ def delete_emails_dry_run():
     if not email_user or not email_pass:
         return "Session expired. Please re-enter your email credentials.", 400
 
-    deleted_count = delete_emails_dry_run(email_user, email_pass, safe_list, scan_limit)
+    deleted_count = delete_unapproved_emails_dry_run(email_user, email_pass, safe_list, scan_limit)
 
     session.clear()
 
