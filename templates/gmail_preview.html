@@ -1,0 +1,163 @@
+﻿<!-- gmail_preview.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Unapproved Senders</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .email-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .email-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+        }
+        .email-item label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .email-item input[type="checkbox"] {
+            margin-right: 10px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+        .safe-list {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .safe-list h3 {
+            margin-top: 0;
+            color: #155724;
+        }
+        .safe-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .stats {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Review Unapproved Senders</h1>
+
+        <div class="stats">
+            <strong>Scan Results:</strong> Found {{ unapproved|length }} unapproved senders
+            {% if scan_limit != 'all' %}
+                (scanned last {{ scan_limit }} emails)
+            {% else %}
+                (scanned all emails)
+            {% endif %}
+        </div>
+
+        {% if unapproved %}
+        <form method="post">
+            <p><strong>Select email addresses to add to your safe list:</strong></p>
+            <div class="email-list">
+                {% for sender in unapproved %}
+                <div class="email-item">
+                    <label>
+                        <input type="checkbox" name="keep" value="{{ sender }}">
+                        {{ sender }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="submit" class="btn">Add Selected to Safe List</button>
+        </form>
+        {% else %}
+        <div class="alert alert-success">
+            <strong>Great!</strong> No unapproved senders found. All emails are from safe addresses.
+        </div>
+        {% endif %}
+
+        <div style="margin: 30px 0; text-align: center;">
+            <form action="/delete_emails_dry_run" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-warning">Preview Deletion (Dry Run)</button>
+            </form>
+
+            <form action="/delete_emails" method="post" style="display: inline;">
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('Are you sure? This will permanently delete all emails from unapproved senders!');">
+                    Delete All Unapproved Emails
+                </button>
+            </form>
+        </div>
+
+        <div class="safe-list">
+            <h3>Current Safe List ({{ safe_list|length }} addresses)</h3>
+            {% if safe_list %}
+            <ul>
+                {% for safe in safe_list %}
+                <li>{{ safe }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>No safe addresses configured yet.</p>
+            {% endif %}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="btn">Back to Main Page</a>
+        </div>
+    </div>
+</body>
+</html>

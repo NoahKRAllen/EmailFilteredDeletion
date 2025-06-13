@@ -1,0 +1,152 @@
+﻿
+<!-- gmail_index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gmail Email Filter & Deleter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .alert-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .setup-status {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .status-good {
+            color: #28a745;
+        }
+        .status-bad {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gmail Email Filter & Deleter</h1>
+
+        <div class="alert alert-info">
+            <strong>Note:</strong> This application uses the Gmail API instead of IMAP for better reliability and performance.
+        </div>
+
+        <div class="setup-status" id="setupStatus">
+            <p>Checking Gmail API setup...</p>
+        </div>
+
+        <div class="alert alert-warning">
+            <strong>Important:</strong> Make sure you have:
+            <ul>
+                <li>Set up a Google Cloud project with Gmail API enabled</li>
+                <li>Downloaded your OAuth credentials as 'credentials.json'</li>
+                <li>Installed required packages: <code>pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client</code></li>
+            </ul>
+            <a href="/setup" class="btn btn-secondary">View Setup Instructions</a>
+        </div>
+
+        <form method="post" action="/scan" id="scanForm" style="display: none;">
+            <div class="form-group">
+                <label for="safe_list">Safe List (one email per line):</label>
+                <textarea name="safe_list" id="safe_list" rows="10" placeholder="Enter trusted email addresses, one per line..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="scan_limit">Number of emails to scan:</label>
+                <select name="scan_limit" id="scan_limit">
+                    <option value="100">100 (recommended for testing)</option>
+                    <option value="500" selected>500 (good balance)</option>
+                    <option value="1000">1000 (thorough scan)</option>
+                    <option value="all">All emails (may take a while)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn">Scan Inbox for Unapproved Senders</button>
+        </form>
+    </div>
+
+    <script>
+        // Check setup status
+        fetch('/api/check_setup')
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('setupStatus');
+                const form = document.getElementById('scanForm');
+
+                if (data.setup_complete) {
+                    statusDiv.innerHTML = '<p class="status-good">✓ Gmail API is properly configured</p>';
+                    form.style.display = 'block';
+                } else {
+                    statusDiv.innerHTML = '<p class="status-bad">✗ Gmail API setup incomplete. Please download credentials.json</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error checking setup:', error);
+                document.getElementById('setupStatus').innerHTML = '<p class="status-bad">Error checking setup status</p>';
+            });
+    </script>
+</body>
+</html>
